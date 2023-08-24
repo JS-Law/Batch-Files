@@ -1,3 +1,23 @@
+param([switch]$Elevated)
+
+function Test-Admin {
+    $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
+
+if ((Test-Admin) -eq $false)  {
+    if ($elevated) {
+        # tried to elevate, did not work, aborting
+    } else {
+        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
+    }
+    exit
+}
+
+'running with full privileges'
+
+Pause
+
 $serviceNames = "Spooler", "WSearch", "WMPNetworkSvc", "HPPrintScanDoctorService", "LogiFacecamService"
 
 foreach ($serviceName in $serviceNames) {
@@ -5,7 +25,7 @@ foreach ($serviceName in $serviceNames) {
     if ($serviceStatus) {
         if ($serviceStatus.Status -eq "Running") {
             Write-Host "Stopping the service $serviceName..." -NoNewline
-            Stop-Service -Name $serviceName
+            Stop-Service -Name $serviceName 
             $serviceStatus = Get-Service -Name $serviceName
             if ($serviceStatus.Status -eq "Stopped") {
                 Write-Host "The service $serviceName was successfully stopped." -ForegroundColor Green
@@ -36,23 +56,6 @@ foreach ($serviceName in $serviceNames) {
 }
 
 Pause
-In this PowerShell script:
-
-The $serviceNames array contains the names of the services you want to work with. Adjust this array to match your needs.
-
-The script iterates through each service name in the list.
-
-For each service, it checks if the service is running, stops it if needed, and provides color-coded output for success or failure.
-
-The Write-Host cmdlet is used with -ForegroundColor to set the text color to green for successful stops and red for errors.
-
-After the first loop, a blank line is added for separation.
-
-The second loop displays the status of all services in the list using color-coded text. If a service is running, its status will be displayed in green; if not, it will be displayed in white.
-
-The Pause command keeps the PowerShell console window open after the script completes, allowing you to review the output.
-
-This script should provide the desired functionality of stopping services and displaying their status with color-coded text.
 
 
 
